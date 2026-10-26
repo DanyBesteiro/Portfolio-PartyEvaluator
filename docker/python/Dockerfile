@@ -18,4 +18,4 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY django-langgraph/ .
 
-CMD ["sh", "-c", "if [ \"${APP_ENV:-development}\" = \"production\" ]; then exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000}; else exec python manage.py runserver 0.0.0.0:${PORT:-8000}; fi"]
+CMD ["sh", "-c", "if [ \"${APP_ENV:-development}\" = \"production\" ]; then exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --timeout 120 --graceful-timeout 30; else exec python manage.py runserver 0.0.0.0:${PORT:-8000}; fi"]
