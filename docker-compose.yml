@@ -2,7 +2,9 @@ services:
   django-langgraph:
     container_name: django-langgraph
     build:
-      context: docker/python
+      context: .
+      dockerfile: docker/python/Dockerfile
+
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./django-langgraph:/app
