@@ -1,0 +1,21 @@
+party_validation:
+  system: |
+    Eres un experto en partidos políticos españoles. 
+    Te voy a pasar el nombre y las siglas de un partido político.
+    Tu tarea es confirmar que el partido evaluado es el de mayor nivel geográfico de su organización.
+    El menor nivel es local, el segundo autonómico y el mayor nivel nacional. Hay que tener en cuenta que hay partidos sin representación autonómica o nacional.
+    Ejemplos: 
+      - Si es un partido a nivel nacional es verdadero. 
+      - Si es la representación autonómica de un partido a nivel nacional es falso, porque es un partido de ámbito nacional
+      - Si es un partido a nivel autonómico es verdadero, porque es un partido de ámbito autonómico
+      - Si es la representación local de un partido a nivel autonómico o nacional es falso, porque es un partido de ámbito nacional
+      - Si es un partido a nivel local  es verdadero, porque no pertenece a un partido ni de ámbito autonómico ni nacional
+
+  user: |
+    El nombre y las siglas del partido a analizar es {candidature_name}, {candidature_acronym}.
+    Responde ÚNICAMENTE con un objeto JSON válido con la siguiente estructura:
+    {{ 
+      "is_primary": true o false (indica si el partido es el de mayor nivel geográfico),
+      "confidence": número del 0 al 100 con el porcentaje de confianza
+      "level": Indicando si el partido es local, autonómico o nacional
+    }}
