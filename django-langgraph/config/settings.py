@@ -1,5 +1,4 @@
 import environ
-import os
 
 from pathlib import Path
 
@@ -107,3 +106,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 OPENROUTER_API_URL = env("OPENROUTER_API_URL")
 OPENROUTER_API_KEY = env("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = env("OPENROUTER_MODEL")
+DJANGO_API_TOKEN = env("DJANGO_API_TOKEN")
+
+
