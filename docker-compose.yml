@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: docker/python/Dockerfile
+    volumes:
+      - ./django-langgraph:/app
     container_name: django-langgraph
     env_file:
       - ./django-langgraph/.env.local

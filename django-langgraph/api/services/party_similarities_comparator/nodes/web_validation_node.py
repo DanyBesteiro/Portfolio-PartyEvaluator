@@ -2,30 +2,59 @@ import os
 import yaml
 import logging
 import json
-logger = logging.getLogger(__name__)
 
 from django.conf import settings
 from ..state import PartyResolutionState
+
 from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableLambda, RunnableParallel
 from pydantic import BaseModel, Field
 
+logger = logging.getLogger(__name__)
 class PartyValidationResult(BaseModel):
     candidature_id: str
     result: bool
-    confidence: int = Field(ge=0, le=100)
+    confidence: int = Field(ge=0, le=100)    
     similarity_id: str | None
+    reason: str
 
 class PartyValidationResponse(BaseModel):
     results: list[PartyValidationResult]
 
-
 def web_validation(state: PartyResolutionState) -> dict:
+    element_generated = RunnableLambda(generate_element)
+    element_evaluated = RunnableLambda(validate_element)
 
-    return {"web_validation": validate_list(
-        generate_list(state["coincidences"])
-    )}
+    chain = element_generated | element_evaluated
+    result = chain.batch(state["coincidences"])
+    
+    return {"web_validation": result}
 
+def generate_element(coincidence) -> dict:
+    return {
+        "candidature": {
+            "id": coincidence["candidature"]["id"],
+            "name": coincidence["candidature"]["name"],
+            "acronym": coincidence["candidature"]["formatted_acronym"]
+        },
+        "similarities": sorted(coincidence["party_similarities"], key=lambda p: p["score_ag"], reverse=True)
+    }
+
+def validate_element(element):    
+    prompt_templates = load_prompt('validation_prompts', 'party_geographical_validation')
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", prompt_templates["system"]),
+        ("user", prompt_templates["user"])
+    ])
+    
+    openrouterAI = ChatOpenRouter(model= settings.OPENROUTER_MODEL, temperature=0.1, max_tokens=10000)
+    structured_model = openrouterAI.with_structured_output(PartyValidationResult)
+
+    chain = prompt | structured_model
+    return chain.invoke({'candidature' : element})
+    
+"""
 def generate_list(coincidences) -> list:
     list = []
     for coincidence in coincidences:
@@ -35,21 +64,24 @@ def generate_list(coincidences) -> list:
                 "name": coincidence["candidature"]["name"],
                 "acronym": coincidence["candidature"]["formatted_acronym"]
             },
-            "similarities": []   
+            "similarities": []
         }
-        similarities = sorted(coincidence["party_similarities"], key=lambda p: p["score_ag"], reverse=True)
+        similarities = sorted(coincidence["party_similarities"], key=lambda p: p["score_ag"], reverse=True)        
         for similarity in similarities: 
             if is_candidate(similarity):
                 candidate["similarities"].append({
                     "id": similarity["id"],
                     "name": similarity["normalized_name"],
-                    "acronym": similarity["normalized_acronym"]
+                    "acronym": similarity["normalized_acronym"],
+                    "score_name": similarity["score_name"],
+                    "score_acro": similarity["score_acro"],
+                    "score_ag": similarity["score_ag"]
                 }) 
 
         list.append(candidate)
 
     return list
-
+"""
 def is_candidate(similarity) -> bool:
     return similarity['score_ag']  >= 0.90 or similarity['score_name']  >= 0.90 or similarity['score_acro']  >= 0.90
 
@@ -60,7 +92,7 @@ def validate_list(list):
         ("user", prompt_templates["user"])
     ])
     
-    openrouterAI = ChatOpenRouter(model="openrouter/free", temperature=0.1, max_tokens=10000)
+    openrouterAI = ChatOpenRouter(model= settings.OPENROUTER_MODEL, temperature=0.1, max_tokens=10000)
     structured_model = openrouterAI.with_structured_output(PartyValidationResponse)
     serialized_list = json.dumps(
         list,
@@ -69,8 +101,10 @@ def validate_list(list):
     )
     
     chain = prompt | structured_model
-    
-    return chain.invoke({"candidatures": serialized_list})
+
+    result = chain.batch({"candidatures": serialized_list}, return_exceptions=True)
+
+    return result
 
 def load_prompt(domain: str, prompt_name: str) -> dict:
     prompt_path = os.path.join(

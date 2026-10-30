@@ -5,9 +5,9 @@ class PartySimilaritiesComparatorService:
 
     def compare(self, coincidences: dict) -> list:
 
-        try: 
+        try:
             similarities = graph.invoke({"coincidences": coincidences})
-            
+            #print(similarities)
             return JsonResponse(
                 {
                     "results": similarities['results']
