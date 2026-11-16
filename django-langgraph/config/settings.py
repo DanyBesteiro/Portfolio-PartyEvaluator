@@ -1,4 +1,5 @@
 import environ
+import os
 
 from pathlib import Path
 
@@ -12,7 +13,7 @@ env = environ.Env()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-yl9s2dghaze52c+q_b@hl05jp7^m187a&!m1^(%t=ck)g2g1x@'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False)
