@@ -9,9 +9,7 @@ def compare_results(state: PartyResolutionState) -> dict:
             "results": []
         }
         language_match = state.get("language_match")
-        
         web_match = state.get("web_validation")
-        
         for match in web_match:
             if match.candidature_id in language_match:
                 aux = validate_match(language_match[match.candidature_id], match)

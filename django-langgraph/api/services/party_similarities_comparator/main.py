@@ -7,7 +7,7 @@ class PartySimilaritiesComparatorService:
 
         try:
             similarities = graph.invoke({"coincidences": coincidences})
-            #print(similarities)
+
             return JsonResponse(
                 {
                     "results": similarities['results']

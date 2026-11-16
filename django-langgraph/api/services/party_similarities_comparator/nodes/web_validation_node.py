@@ -25,8 +25,8 @@ class PartyValidationResponse(BaseModel):
 def web_validation(state: PartyResolutionState) -> dict:
     element_generated = RunnableLambda(generate_element)
     element_evaluated = RunnableLambda(validate_element)
-
     chain = element_generated | element_evaluated
+    
     result = chain.batch(state["coincidences"])
     
     return {"web_validation": result}
@@ -38,50 +38,22 @@ def generate_element(coincidence) -> dict:
             "name": coincidence["candidature"]["name"],
             "acronym": coincidence["candidature"]["formatted_acronym"]
         },
-        "similarities": sorted(coincidence["party_similarities"], key=lambda p: p["score_ag"], reverse=True)
+        "similarities": sorted(coincidence["similarities"], key=lambda p: p["score_ag"], reverse=True)
     }
 
-def validate_element(element):    
+def validate_element(element):
     prompt_templates = load_prompt('validation_prompts', 'party_geographical_validation')
     prompt = ChatPromptTemplate.from_messages([
         ("system", prompt_templates["system"]),
         ("user", prompt_templates["user"])
     ])
-    
     openrouterAI = ChatOpenRouter(model= settings.OPENROUTER_MODEL, temperature=0.1, max_tokens=10000)
-    structured_model = openrouterAI.with_structured_output(PartyValidationResult)
 
+    structured_model = openrouterAI.with_structured_output(PartyValidationResult)
+    
     chain = prompt | structured_model
     return chain.invoke({'candidature' : element})
     
-"""
-def generate_list(coincidences) -> list:
-    list = []
-    for coincidence in coincidences:
-        candidate = {
-            "candidature": {
-                "id": coincidence["candidature"]["id"],
-                "name": coincidence["candidature"]["name"],
-                "acronym": coincidence["candidature"]["formatted_acronym"]
-            },
-            "similarities": []
-        }
-        similarities = sorted(coincidence["party_similarities"], key=lambda p: p["score_ag"], reverse=True)        
-        for similarity in similarities: 
-            if is_candidate(similarity):
-                candidate["similarities"].append({
-                    "id": similarity["id"],
-                    "name": similarity["normalized_name"],
-                    "acronym": similarity["normalized_acronym"],
-                    "score_name": similarity["score_name"],
-                    "score_acro": similarity["score_acro"],
-                    "score_ag": similarity["score_ag"]
-                }) 
-
-        list.append(candidate)
-
-    return list
-"""
 def is_candidate(similarity) -> bool:
     return similarity['score_ag']  >= 0.90 or similarity['score_name']  >= 0.90 or similarity['score_acro']  >= 0.90
 
@@ -102,9 +74,7 @@ def validate_list(list):
     
     chain = prompt | structured_model
 
-    result = chain.batch({"candidatures": serialized_list}, return_exceptions=True)
-
-    return result
+    return chain.batch({"candidatures": serialized_list}, return_exceptions=True)
 
 def load_prompt(domain: str, prompt_name: str) -> dict:
     prompt_path = os.path.join(
