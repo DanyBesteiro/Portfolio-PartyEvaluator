@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view
-from .authentication import require_api_token
+from config.authentication import require_api_token
 from .serializers import PartySimilaritiesComparatorRequestSerializer, PartyValidatorRequestSerializer, PartySimilaritiesJoinerRequestSerializer
 from .services.party_similarities_comparator.main import PartySimilaritiesComparatorService
 from .services.party_similarities_joiner.main import PartySimilaritiesJoiner
