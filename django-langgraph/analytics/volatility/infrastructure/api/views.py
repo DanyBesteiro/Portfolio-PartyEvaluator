@@ -14,7 +14,6 @@ from .serializers import (
 
 @require_api_token
 @api_view(["POST"])
-#class PedersenVolatilityView(request):
 def pedersen_volatility_calculation(request):
     input_serializer = VolatilityCalculationRequestSerializer(data=request.data)
     input_serializer.is_valid(raise_exception=True)
